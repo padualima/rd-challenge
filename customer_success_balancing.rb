@@ -10,7 +10,40 @@ class CustomerSuccessBalancing
 
   # Returns the ID of the customer success with most customers
   def execute
-    # Write your solution here
+    define_available_customer_successes
+
+    sort_by_score(@customer_success)
+
+    balancing_clients_to_customer_successes
+
+    result = customer_success_with_greater_service
+
+    result.one? ? result[0][:id] : 0
+  end
+
+  def define_available_customer_successes
+    if @away_customer_success.any?
+      @customer_success.reject! { |c| @away_customer_success.include?(c[:id]) }
+    end
+  end
+
+  def sort_by_score(objects=[])
+    objects.sort_by! { |obj| obj[:score] }
+  end
+
+  def balancing_clients_to_customer_successes
+    @customer_success.each do |cs|
+      cs[:meet_to_customers] = @customers.select { |c| c[:score] <= cs[:score] }
+      @customers = @customers - cs[:meet_to_customers] if cs[:meet_to_customers].any?
+    end
+  end
+
+  def customer_success_with_greater_service
+    group_by_amount_of_customer_meet[1]
+  end
+
+  def group_by_amount_of_customer_meet
+    @customer_success.group_by { |cs| cs[:meet_to_customers].count }.sort.last
   end
 end
 
