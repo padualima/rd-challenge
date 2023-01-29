@@ -1,5 +1,5 @@
 ## **O Desafio - CustomerSuccess Balancing**
----
+
 Este desafio consiste em um sistema de balanceamento entre clientes e Customer Success (CSs). Os CSs são os Gerentes de Sucesso, são responsáveis pelo acompanhamento estratégico dos clientes.
 
 Dependendo do tamanho do cliente - aqui nos referimos ao tamanho da empresa - nós temos que colocar CSs mais experientes para atendê-los.
@@ -27,14 +27,14 @@ Sendo `n` o número de CSs, `m` o número de clientes e `t` o número de absten�
 - 0 < tamanho do cliente < 100.000
 - Valor máximo de t = n/2 arredondado para baixo
 ## **Input**
----
+
 A função `customerSuccessBalancing()` recebe 3 parâmetros:
 
 - id e nivel da experiencia do CS
 - id e nivel de experiência dos Clientes
 - ids dos CustomerSuccess indisponíveis
 ## **Output**
----
+
 O resultado esperado deve ser o id do CS que atende mais clientes. Com esse valor a empresa poderá fazer um plano de ação para contratar mais CS’s de um nível aproximado.
 
 Em caso de empate retornar `0`.
