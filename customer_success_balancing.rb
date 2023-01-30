@@ -22,6 +22,9 @@ class CustomerSuccessBalancing
     unless @customer_success.map { |cs| cs[:score].to_i.between?(1, 9_999) }.all?
       return customer_success_exception(:score)
     end
+    unless @away_customer_success.count <= (@customer_success.count / 2.0).floor
+      return customer_success_exception(:away_customer_success)
+    end
     return customers_exception(:quantity) unless @customers.count.between?(1, 999_999)
     unless @customers.map { |cs| cs[:id].to_i.between?(1, 999_999) }.all?
       return customers_exception(:id)
@@ -332,6 +335,20 @@ class CustomerSuccessBalancingTests < Minitest::Test
     )
 
     assert_equal 920, balancer.execute
+  end
+
+  def test_scenario_twenty_two
+    balancer = CustomerSuccessBalancing.new(
+      build_scores([60, 20, 95, 75]),
+      build_scores([90, 20, 70, 40, 60, 10]),
+      [2, 3, 4]
+    )
+
+    result = balancer.execute
+
+    assert_equal CustomerSuccessException, result.class
+    assert_equal :away_customer_success, result.input
+    assert_equal "amount not allowed", result.message
   end
 
   private
