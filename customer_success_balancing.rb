@@ -1,7 +1,11 @@
 require 'minitest/autorun'
 require 'timeout'
 
+CustomerSuccessNumberException = Struct.new(:message)
+
 class CustomerSuccessBalancing
+  include Comparable
+
   def initialize(customer_success, customers, away_customer_success)
     @customer_success = customer_success
     @customers = customers
@@ -10,6 +14,10 @@ class CustomerSuccessBalancing
 
   # Returns the ID of the customer success with most customers
   def execute
+    unless @customer_success.count.between?(1, 999)
+      return CustomerSuccessNumberException.new("quantity not allowed")
+    end
+
     define_available_customer_successes
 
     sort_by_score(@customer_success)
@@ -110,6 +118,32 @@ class CustomerSuccessBalancingTests < Minitest::Test
       [4, 5, 6]
     )
     assert_equal 3, balancer.execute
+  end
+
+  def test_scenario_eight
+    balancer = CustomerSuccessBalancing.new(
+      build_scores(Array(1..1000)),
+      build_scores(Array.new(10000, 998)),
+      []
+    )
+
+    result = balancer.execute
+
+    assert_equal CustomerSuccessNumberException, result.class
+    assert_equal "quantity not allowed", result.message
+  end
+
+  def test_scenario_nine
+    balancer = CustomerSuccessBalancing.new(
+      [],
+      build_scores(Array.new(10000, 998)),
+      []
+    )
+
+    result = balancer.execute
+
+    assert_equal CustomerSuccessNumberException, result.class
+    assert_equal "quantity not allowed", result.message
   end
 
   private
