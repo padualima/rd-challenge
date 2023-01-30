@@ -15,23 +15,7 @@ class CustomerSuccessBalancing
 
   # Returns the ID of the customer success with most customers
   def execute
-    return customer_success_exception(:quantity) unless @customer_success.count.between?(1, 999)
-    unless @customer_success.map { |cs| cs[:id].to_i.between?(1, 999) }.all?
-      return customer_success_exception(:id)
-    end
-    unless @customer_success.map { |cs| cs[:score].to_i.between?(1, 9_999) }.all?
-      return customer_success_exception(:score)
-    end
-    unless @away_customer_success.count <= (@customer_success.count / 2.0).floor
-      return customer_success_exception(:away_customer_success)
-    end
-    return customers_exception(:quantity) unless @customers.count.between?(1, 999_999)
-    unless @customers.map { |cs| cs[:id].to_i.between?(1, 999_999) }.all?
-      return customers_exception(:id)
-    end
-    unless @customers.map { |cs| cs[:score].to_i.between?(1, 99_999) }.all?
-      return customers_exception(:score)
-    end
+    return exceptions if is_exceptions?
 
     define_available_customer_successes
 
@@ -81,6 +65,67 @@ class CustomerSuccessBalancing
 
   def customers_exception(input, message="amount not allowed")
     generate_exception(CustomersException, input, message)
+  end
+
+  def value_between(value, greater_then=1, less_then)
+    value.between?(greater_then, less_then)
+  end
+
+  def exception_for_customer_success
+    return :quantity unless value_between(@customer_success.count, 999)
+    return :id unless @customer_success.map { |cs| value_between(cs[:id].to_i, 999) }.all?
+    return :score unless @customer_success.map { |cs| value_between(cs[:score].to_i, 9_999) }.all?
+    if @away_customer_success.count > (@customer_success.count / 2.0).floor
+      :away_customer_success
+    end
+  end
+
+  def exception_for_customers
+    return :quantity unless value_between(@customers.count, 999_999)
+    return :id unless @customers.map { |cs| value_between(cs[:id].to_i, 999_999) }.all?
+    return :score unless @customers.map { |cs| value_between(cs[:score].to_i, 99_999) }.all?
+  end
+
+  def is_exception_for_customer_success?
+    exception_for_customer_success
+  end
+
+  def is_exception_for_customers?
+    exception_for_customers
+  end
+
+  def is_exceptions?
+    is_exception_for_customer_success? || is_exception_for_customers?
+  end
+
+  def customer_success_exceptions
+    case exception_for_customer_success
+    when :quantity
+      customer_success_exception(:quantity)
+    when :id
+      customer_success_exception(:id)
+    when :score
+      customer_success_exception(:score)
+    when :away_customer_success
+      customer_success_exception(:away_customer_success)
+    end
+  end
+
+  def customers_exceptions
+    case exception_for_customers
+    when :quantity
+      customers_exception(:quantity)
+    when :id
+      customers_exception(:id)
+    when :score
+      customers_exception(:score)
+    end
+  end
+
+  def exceptions
+    # note: sometimes repetition is better than a messy abstraction ;)
+    return customer_success_exceptions if is_exception_for_customer_success?
+    return customers_exceptions if is_exception_for_customers?
   end
 end
 
