@@ -252,6 +252,62 @@ class CustomerSuccessBalancingTests < Minitest::Test
     assert_equal "amount not allowed", result.message
   end
 
+  def test_scenario_sixteen
+    balancer = CustomerSuccessBalancing.new(
+      [{ id: 960, score: 10_000 }],
+      build_scores([10, 10, 10, 20, 20, 30, 30, 30, 20, 60]),
+      []
+    )
+
+    result = balancer.execute
+
+    assert_equal CustomerSuccessException, result.class
+    assert_equal :score, result.input
+    assert_equal "amount not allowed", result.message
+  end
+
+  def test_scenario_seventeen
+    balancer = CustomerSuccessBalancing.new(
+      [{ id: 960, score: [0, nil, ""].sample }],
+      build_scores([10, 10, 10, 20, 20, 30, 30, 30, 20, 60]),
+      []
+    )
+
+    result = balancer.execute
+
+    assert_equal CustomerSuccessException, result.class
+    assert_equal :score, result.input
+    assert_equal "amount not allowed", result.message
+  end
+
+  def test_scenario_eighteen
+    balancer = CustomerSuccessBalancing.new(
+      build_scores([10, 10, 10, 20, 20, 30, 30, 30, 20, 60]),
+      [{ id: 9920, score: 100_000 }],
+      []
+    )
+
+    result = balancer.execute
+
+    assert_equal CustomersException, result.class
+    assert_equal :score, result.input
+    assert_equal "amount not allowed", result.message
+  end
+
+  def test_scenario_nineteen
+    balancer = CustomerSuccessBalancing.new(
+      build_scores([10, 10, 10, 20, 20, 30, 30, 30, 20, 60]),
+      [{ id: 9920, score: [0, nil, ""].sample }],
+      []
+    )
+
+    result = balancer.execute
+
+    assert_equal CustomersException, result.class
+    assert_equal :score, result.input
+    assert_equal "amount not allowed", result.message
+  end
+
   private
 
   def build_scores(scores)
