@@ -55,7 +55,7 @@ class CustomerSuccessBalancing
 
   def balancing_clients_to_customer_successes
     @customer_success.each do |cs|
-      cs[:meet_to_customers] = @customers.select { |c| c[:score] <= cs[:score] }
+      cs[:meet_to_customers] = @customers.select { |c| c[:score].to_i <= cs[:score].to_i }
       @customers = @customers - cs[:meet_to_customers] if cs[:meet_to_customers].any?
     end
   end
@@ -312,6 +312,26 @@ class CustomerSuccessBalancingTests < Minitest::Test
     assert_equal CustomersException, result.class
     assert_equal :score, result.input
     assert_equal "amount not allowed", result.message
+  end
+
+  def test_scenario_twenty
+    balancer = CustomerSuccessBalancing.new(
+      [{ id: 920, score: "9600" }],
+      build_scores([11, 21, 31, 3, 4, 5]),
+      []
+    )
+
+    assert_equal 920, balancer.execute
+  end
+
+  def test_scenario_twenty_one
+    balancer = CustomerSuccessBalancing.new(
+      [{ id: 920, score: "9600" }],
+      [{ id: 899_220, score: "99600" }],
+      []
+    )
+
+    assert_equal 920, balancer.execute
   end
 
   private
