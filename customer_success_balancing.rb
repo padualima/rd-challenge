@@ -1,8 +1,8 @@
 require 'minitest/autorun'
 require 'timeout'
 
-CustomerSuccessNumberException = Struct.new(:message)
-CustomersNumberException = Struct.new(:message)
+CustomerSuccessException = Struct.new(:input, :message)
+CustomersException = Struct.new(:input, :message)
 
 class CustomerSuccessBalancing
   include Comparable
@@ -15,13 +15,11 @@ class CustomerSuccessBalancing
 
   # Returns the ID of the customer success with most customers
   def execute
+    return customer_success_exception(:quantity) unless @customer_success.count.between?(1, 999)
     unless @customer_success.count.between?(1, 999)
       return CustomerSuccessNumberException.new("quantity not allowed")
     end
-
-    unless @customers.count.between?(1, 999_999)
-      return CustomersNumberException.new("quantity not allowed")
-    end
+    return customers_exception(:quantity) unless @customers.count.between?(1, 999_999)
 
     define_available_customer_successes
 
@@ -33,6 +31,8 @@ class CustomerSuccessBalancing
 
     result.one? ? result[0][:id] : 0
   end
+
+  private
 
   def define_available_customer_successes
     if @away_customer_success.any?
@@ -57,6 +57,18 @@ class CustomerSuccessBalancing
 
   def group_by_amount_of_customer_meet
     @customer_success.group_by { |cs| cs[:meet_to_customers].count }.sort.last
+  end
+
+  def generate_exception(klass, input, message)
+    klass.new(input, message)
+  end
+
+  def customer_success_exception(input, message="amount not allowed")
+    generate_exception(CustomerSuccessException, input, message)
+  end
+
+  def customers_exception(input, message="amount not allowed")
+    generate_exception(CustomersException, input, message)
   end
 end
 
@@ -134,8 +146,9 @@ class CustomerSuccessBalancingTests < Minitest::Test
 
     result = balancer.execute
 
-    assert_equal CustomerSuccessNumberException, result.class
-    assert_equal "quantity not allowed", result.message
+    assert_equal CustomerSuccessException, result.class
+    assert_equal :quantity, result.input
+    assert_equal "amount not allowed", result.message
   end
 
   def test_scenario_nine
@@ -147,8 +160,9 @@ class CustomerSuccessBalancingTests < Minitest::Test
 
     result = balancer.execute
 
-    assert_equal CustomerSuccessNumberException, result.class
-    assert_equal "quantity not allowed", result.message
+    assert_equal CustomerSuccessException, result.class
+    assert_equal :quantity, result.input
+    assert_equal "amount not allowed", result.message
   end
 
   def test_scenario_ten
@@ -160,8 +174,9 @@ class CustomerSuccessBalancingTests < Minitest::Test
 
     result = balancer.execute
 
-    assert_equal CustomersNumberException, result.class
-    assert_equal "quantity not allowed", result.message
+    assert_equal CustomersException, result.class
+    assert_equal :quantity, result.input
+    assert_equal "amount not allowed", result.message
   end
 
   def test_scenario_eleven
@@ -173,6 +188,10 @@ class CustomerSuccessBalancingTests < Minitest::Test
 
     result = balancer.execute
 
+    assert_equal CustomersException, result.class
+    assert_equal :quantity, result.input
+    assert_equal "amount not allowed", result.message
+  end
     assert_equal CustomersNumberException, result.class
     assert_equal "quantity not allowed", result.message
   end
