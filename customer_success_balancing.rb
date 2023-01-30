@@ -17,9 +17,7 @@ class CustomerSuccessBalancing
   def execute
     return exceptions if is_exceptions?
 
-    define_available_customer_successes
-
-    sort_by_score(@customer_success)
+    reject_away_customer_successes if @away_customer_success.any?
 
     balancing_clients_to_customer_successes
 
@@ -30,9 +28,16 @@ class CustomerSuccessBalancing
 
   private
 
-  def define_available_customer_successes
-    if @away_customer_success.any?
-      @customer_success.reject! { |c| @away_customer_success.include?(c[:id]) }
+  def reject_away_customer_successes
+    @customer_success.reject! { |c| @away_customer_success.include?(c[:id]) }
+  end
+
+  def balancing_clients_to_customer_successes
+    sort_by_score(@customer_success)
+
+    @customer_success.each do |cs|
+      cs[:meet_to_customers] = @customers.select { |c| c[:score].to_i <= cs[:score].to_i }
+      @customers = @customers - cs[:meet_to_customers] if cs[:meet_to_customers].any?
     end
   end
 
@@ -40,30 +45,23 @@ class CustomerSuccessBalancing
     objects.sort_by! { |obj| obj[:score] }
   end
 
-  def balancing_clients_to_customer_successes
-    @customer_success.each do |cs|
-      cs[:meet_to_customers] = @customers.select { |c| c[:score].to_i <= cs[:score].to_i }
-      @customers = @customers - cs[:meet_to_customers] if cs[:meet_to_customers].any?
-    end
-  end
-
   def customer_success_with_greater_service
-    group_by_amount_of_customer_meet[1]
+    group_by_amount_of_customer_meet.last[1]
   end
 
   def group_by_amount_of_customer_meet
-    @customer_success.group_by { |cs| cs[:meet_to_customers].count }.sort.last
+    @customer_success.group_by { |cs| cs[:meet_to_customers].count }.sort
   end
 
   def generate_exception(klass, input, message)
     klass.new(input, message)
   end
 
-  def customer_success_exception(input, message="amount not allowed")
+  def generate_customer_success_exception(input, message="amount not allowed")
     generate_exception(CustomerSuccessException, input, message)
   end
 
-  def customers_exception(input, message="amount not allowed")
+  def generate_customers_exception(input, message="amount not allowed")
     generate_exception(CustomersException, input, message)
   end
 
@@ -101,24 +99,24 @@ class CustomerSuccessBalancing
   def customer_success_exceptions
     case exception_for_customer_success
     when :quantity
-      customer_success_exception(:quantity)
+      generate_customer_success_exception(:quantity)
     when :id
-      customer_success_exception(:id)
+      generate_customer_success_exception(:id)
     when :score
-      customer_success_exception(:score)
+      generate_customer_success_exception(:score)
     when :away_customer_success
-      customer_success_exception(:away_customer_success)
+      generate_customer_success_exception(:away_customer_success)
     end
   end
 
   def customers_exceptions
     case exception_for_customers
     when :quantity
-      customers_exception(:quantity)
+      generate_customers_exception(:quantity)
     when :id
-      customers_exception(:id)
+      generate_customers_exception(:id)
     when :score
-      customers_exception(:score)
+      generate_customers_exception(:score)
     end
   end
 
