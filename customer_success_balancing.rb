@@ -20,6 +20,9 @@ class CustomerSuccessBalancing
       return customer_success_exception(:id)
     end
     return customers_exception(:quantity) unless @customers.count.between?(1, 999_999)
+    unless @customers.map { |cs| cs[:id].to_i.between?(1, 999_999) }.all?
+      return customers_exception(:id)
+    end
 
     define_available_customer_successes
 
@@ -217,6 +220,34 @@ class CustomerSuccessBalancingTests < Minitest::Test
     result = balancer.execute
 
     assert_equal CustomerSuccessException, result.class
+    assert_equal :id, result.input
+    assert_equal "amount not allowed", result.message
+  end
+
+  def test_scenario_thirteen
+    balancer = CustomerSuccessBalancing.new(
+      build_scores([11, 21, 31, 3, 4, 5]),
+      [{ id: 1_000_000, score: 9600 }],
+      []
+    )
+
+    result = balancer.execute
+
+    assert_equal CustomersException, result.class
+    assert_equal :id, result.input
+    assert_equal "amount not allowed", result.message
+  end
+
+  def test_scenario_fourteen
+    balancer = CustomerSuccessBalancing.new(
+      build_scores([11, 21, 31, 3, 4, 5]),
+      [{ id: [0, nil, ""].sample, score: 9600 }],
+      []
+    )
+
+    result = balancer.execute
+
+    assert_equal CustomersException, result.class
     assert_equal :id, result.input
     assert_equal "amount not allowed", result.message
   end
