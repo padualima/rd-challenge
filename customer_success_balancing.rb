@@ -16,8 +16,8 @@ class CustomerSuccessBalancing
   # Returns the ID of the customer success with most customers
   def execute
     return customer_success_exception(:quantity) unless @customer_success.count.between?(1, 999)
-    unless @customer_success.count.between?(1, 999)
-      return CustomerSuccessNumberException.new("quantity not allowed")
+    unless @customer_success.map { |cs| cs[:id].to_i.between?(1, 9_999) }.all?
+      return customer_success_exception(:id)
     end
     return customers_exception(:quantity) unless @customers.count.between?(1, 999_999)
 
@@ -192,8 +192,33 @@ class CustomerSuccessBalancingTests < Minitest::Test
     assert_equal :quantity, result.input
     assert_equal "amount not allowed", result.message
   end
-    assert_equal CustomersNumberException, result.class
-    assert_equal "quantity not allowed", result.message
+
+  def test_scenario_twelve
+    balancer = CustomerSuccessBalancing.new(
+      [{ id: 10000, score: 960 }],
+      build_scores([10, 10, 10, 20, 20, 30, 30, 30, 20, 60]),
+      []
+    )
+
+    result = balancer.execute
+
+    assert_equal CustomerSuccessException, result.class
+    assert_equal :id, result.input
+    assert_equal "amount not allowed", result.message
+  end
+
+  def test_scenario_twelve
+    balancer = CustomerSuccessBalancing.new(
+      [{ id: [0, nil, ""].sample, score: 960 }],
+      build_scores([10, 10, 10, 20, 20, 30, 30, 30, 20, 60]),
+      []
+    )
+
+    result = balancer.execute
+
+    assert_equal CustomerSuccessException, result.class
+    assert_equal :id, result.input
+    assert_equal "amount not allowed", result.message
   end
 
   private
