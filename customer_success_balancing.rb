@@ -19,9 +19,15 @@ class CustomerSuccessBalancing
     unless @customer_success.map { |cs| cs[:id].to_i.between?(1, 999) }.all?
       return customer_success_exception(:id)
     end
+    unless @customer_success.map { |cs| cs[:score].to_i.between?(1, 9_999) }.all?
+      return customer_success_exception(:score)
+    end
     return customers_exception(:quantity) unless @customers.count.between?(1, 999_999)
     unless @customers.map { |cs| cs[:id].to_i.between?(1, 999_999) }.all?
       return customers_exception(:id)
+    end
+    unless @customers.map { |cs| cs[:score].to_i.between?(1, 99_999) }.all?
+      return customers_exception(:score)
     end
 
     define_available_customer_successes
